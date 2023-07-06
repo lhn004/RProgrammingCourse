@@ -1,0 +1,148 @@
+---
+title: "R Notebook Week 4 Assignment"
+output: html_notebook
+---
+
+
+```{r}
+## Plot the 30-day mortality rates for heart attack
+
+outcome[, 11] <- as.numeric(outcome[, 11])
+hist(outcome[, 11],
+     xlab='Deaths',
+     main='Hospital 30-Day Death (Mortality) Rates from Heart Attack')
+```
+
+```{r}
+## Finding the best hospital in a state
+best <- function(state, outcome) {
+## Read outcome data
+  outcome_df <- read.csv("/Users/nguyenhalinh/Desktop/RProgrammingCourse/week4/rprog_data_ProgAssignment3-data/outcome-of-care-measures.csv",
+                         colClasses = "character")
+  
+  ## Select only interested data and rename column
+  outcome_df <- outcome_df[, c(2, 7, 11, 17, 23)]
+  colnames(outcome_df) <- c("hospital", "state", "heart attack", "heart failure", "pneumonia")
+  
+## Check that state and outcome are valid
+  state_list <- unique(outcome_df[,"state"])
+  if (!state %in% state_list) {
+    stop("Invalid state")
+  }
+
+  if (!outcome %in% c("heart attack", "heart failure", "pneumonia")){
+    stop("Invalid outcome")
+  }
+  
+## Return hospital name in that state with lowest 30-day death
+  ## Get data for each state and remove all NA values
+  state <- outcome_df[(outcome_df[, "state"] == state), ]
+  state[, outcome] <- as.numeric(state[, outcome])
+  state <- state[!is.na(state[, outcome]), ]
+
+  ## Order by outcome rate
+  rank <- state[order(state[, outcome]), ]
+
+  ## Get names of hosptial with the lowest rate
+  best_hospitals <- rank[rank[, outcome] == min(rank[,outcome]),1]
+
+  ## Sort by hospital name if tie
+  sort(best_hospitals)[1]
+}
+```
+
+```{r}
+##  Ranking hospitals by outcome in a state
+rankhospital <- function(state, outcome, num = "best") {
+## Read outcome data
+  outcome_df <- read.csv("/Users/nguyenhalinh/Desktop/RProgrammingCourse/week4/rprog_data_ProgAssignment3-data/outcome-of-care-measures.csv",
+                         colClasses = "character")
+  
+  ## Select only interested data and rename column
+  outcome_df <- outcome_df[, c(2, 7, 11, 17, 23)]
+  colnames(outcome_df) <- c("hospital", "state", "heart attack", "heart failure", "pneumonia")
+  
+## Check that state and outcome are valid
+  state_list <- unique(outcome_df[,"state"])
+  if (!state %in% state_list) {
+    stop("Invalid state")
+  }
+
+  if (!outcome %in% c("heart attack", "heart failure", "pneumonia")){
+    stop("Invalid outcome")
+  }
+    
+  
+## Return hospital name in that state with the given rank
+## 30-day death rate
+  ## Get data for each state and remove all NA values
+  state <- outcome_df[(outcome_df[, "state"] == state), ]
+  state[, outcome] <- as.numeric(state[, outcome])
+  state <- state[!is.na(state[, outcome]), ]
+  
+  ## Order by outcome rate and hospital name
+  rank <- state[order(state[, outcome], state[, "hospital"]), ]
+  print(rank)
+
+  ## Get names of hosptial with the lowest rate
+  if (num == "best"){
+    num <- 1
+  } else if (num == "worst"){
+    num <- nrow(state)}
+  
+  ## Get names of hospital 
+  rank[num,1]
+}
+```
+
+```{r}
+## Ranking hospitals in all states
+rankall <- function(outcome, num = "best") {
+  ## Read outcome data
+  outcome_df <- read.csv("/Users/nguyenhalinh/Desktop/RProgrammingCourse/week4/rprog_data_ProgAssignment3-data/outcome-of-care-measures.csv",
+                         colClasses = "character")
+  
+  ## Select only interested data and rename column
+  outcome_df <- outcome_df[, c(2, 7, 11, 17, 23)]
+  colnames(outcome_df) <- c("hospital", "state", "heart attack", "heart failure", "pneumonia")
+  
+  ## Check that state and outcome are valid
+  if (!outcome %in% c("heart attack", "heart failure", "pneumonia")){
+    stop("Invalid outcome")
+  }
+ 
+  rank_df <- data.frame()
+  
+  ## For each state, find the hospital of the given rank
+  state_list <- unique(outcome_df[,"state"])
+  for (s in state_list){
+    ## Get data for each state and remove all NA values
+    state_df <- outcome_df[(outcome_df[, "state"] == s), ]
+    state_df[, outcome] <- as.numeric(state_df[, outcome])
+    state_df <- state_df[!is.na(state_df[, outcome]), ]
+  
+    ## Order by outcome rate and hospital name
+    rank <- state_df[order(state_df[, outcome], state_df[, "hospital"]), ]
+
+    ## Get names of hosptial with the lowest rate
+    if (num == "best"){
+      snum <- 1
+    } else if (num == "worst"){
+      snum <- nrow(state_df)
+    } else {
+      snum <- num
+    }
+    
+  
+    ## Get names of hospital
+    new_row <- list(hospital = rank[snum,1], state = s)
+    rank_df <- rbind(rank_df, new_row)
+    
+  }
+  
+## Return a data frame with the hospital names and the
+## (abbreviated) state name
+  rank_df
+}
+```
+
